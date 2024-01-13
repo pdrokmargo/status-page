@@ -30,6 +30,12 @@ function App() {
     setStatus(newStatus);
   };
 
+  // We hook a timer when app is loaded first time. 
+  useEffect(() => {
+    const intervalId = setInterval(getStatus, 15000);
+    return () => clearInterval(intervalId);
+  }, []);
+
   return (
     <></>
   );
