@@ -1,25 +1,37 @@
-import React from 'react';
-import logo from './logo.svg';
-import './App.css';
+import React, { useEffect, useState } from 'react';
+import axios from 'axios';
+
+const apiList = [
+  'accounts', 'assets', 'customers', 'datapoints', 'devices',
+  'documents', 'forms', 'invites', 'media', 'messages',
+  'namespaces', 'orders', 'patients', 'relationships',
+  'rules', 'templates', 'users', 'workflows'
+];
 
 function App() {
+  const [status, setStatus] = useState<{ [key: string]: any }>({});
+
+  
+  const getStatus = async () => {
+    const newStatus: { [key: string]: any } = {};
+
+    // We call the status endpoint dynamically. 
+    for (const apiName of apiList) {
+      try {
+        const response = await axios.get(`https://api.factoryfour.com/${apiName}/health/status`);
+        newStatus[apiName] = response.data;
+      } catch (error) {
+        // If the API is deprecated, an status error is going to be simulated.
+        newStatus[apiName] = { success: false, message: '503 Service Unavailable', hostname: 'Deprecated', time: Date.now() };
+      }
+    }
+
+    // Actualiza el estado con los resultados más recientes
+    setStatus(newStatus);
+  };
+
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.tsx</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
-    </div>
+    <></>
   );
 }
 
