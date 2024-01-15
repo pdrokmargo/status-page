@@ -1,43 +1,88 @@
 import React, { useEffect, useState } from 'react';
-import axios from 'axios';
+import axios, { AxiosResponse } from 'axios';
+import ServiceCard from './ServiceCard/ServiceCard';
 
-const apiList = [
-  'accounts', 'assets', 'customers', 'datapoints', 'devices',
-  'documents', 'forms', 'invites', 'media', 'messages',
-  'namespaces', 'orders', 'patients', 'relationships',
-  'rules', 'templates', 'users', 'workflows'
+interface StatusResponse {
+  success: boolean;
+  message: string;
+  hostname: string;
+  time: number;
+}
+
+interface EndpointConfig {
+  serviceName: string;
+  interval: number;
+}
+
+const endpointList: EndpointConfig[] = [
+  { serviceName: 'accounts', interval: 15 }, 
+  { serviceName: 'assets', interval: 15 },
+  { serviceName: 'customers', interval: 10 },
+  { serviceName: 'datapoints', interval: 15 },
+  { serviceName: 'devices', interval: 15 },
+  { serviceName: 'documents', interval: 15 },
+  { serviceName: 'forms', interval: 15 },
+  { serviceName: 'invites', interval: 15 },
+  { serviceName: 'media', interval: 15 },
+  { serviceName: 'messages', interval: 15 },
+  { serviceName: 'namespaces', interval: 15 },
+  { serviceName: 'patients', interval: 15 },
+  { serviceName: 'relationships', interval: 15 },
+  { serviceName: 'rules', interval: 15 },
+  { serviceName: 'templates', interval: 15 },
+  { serviceName: 'users', interval: 15 },
+  { serviceName: 'workflows', interval: 15 }
 ];
 
-function App() {
-  const [status, setStatus] = useState<{ [key: string]: any }>({});
+const App: React.FC = () => {
+  const [status, setStatus] = useState<{ [key: string]: StatusResponse | null }>({});
 
   
-  const getStatus = async () => {
-    const newStatus: { [key: string]: any } = {};
+  const getStatus = async (endpointConfig:EndpointConfig) => {
+    const { serviceName } = endpointConfig;
 
-    // We call the status endpoint dynamically. 
-    for (const apiName of apiList) {
-      try {
-        const response = await axios.get(`https://api.factoryfour.com/${apiName}/health/status`);
-        newStatus[apiName] = response.data;
-      } catch (error) {
-        // If the API is deprecated, an status error is going to be simulated.
-        newStatus[apiName] = { success: false, message: '503 Service Unavailable', hostname: 'Deprecated', time: Date.now() };
-      }
+    try {
+      const response: AxiosResponse<StatusResponse> = await axios.get(`https://api.factoryfour.com/${serviceName}/health/status`);
+      setStatus((prevData) => ({
+        ...prevData,
+        [serviceName]: response.data,
+      }));
+    } catch (error) {
+      console.error(`Error fetching data for ${serviceName}:`, error);
+      setStatus((prevData) => ({
+        ...prevData,
+        [serviceName]: null,
+      }));
     }
-
-    // Actualiza el estado con los resultados más recientes
-    setStatus(newStatus);
   };
+  
 
   // We hook a timer when app is loaded first time. 
   useEffect(() => {
-    const intervalId = setInterval(getStatus, 15000);
-    return () => clearInterval(intervalId);
+    const updateStatus = async () => {
+      await Promise.allSettled(endpointList.map((endpointConfig) => getStatus(endpointConfig)));
+    };
+
+    updateStatus();
+
+    const timers: NodeJS.Timeout[] = endpointList.map((endpointConfig) => {
+      return setInterval(() => getStatus(endpointConfig), endpointConfig.interval * 1000);
+    });
+    
+    
+
+    
+    return () => {
+      timers.forEach((timer) => clearInterval(timer));
+    };
   }, []);
 
   return (
-    <></>
+    <>
+    <div className="flex flex-wrap justify-center mt-10">
+      <ServiceCard endpointList={endpointList} status={status} />
+      </div>
+    </>
   );
 }
 
