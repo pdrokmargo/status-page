@@ -1,3 +1,12 @@
 @import 'tailwindcss/base';
 @import 'tailwindcss/components';
 @import 'tailwindcss/utilities';
+
+
+.healthyStatus {
+    @apply flex rounded-lg h-full bg-green-500 p-8 flex-col;
+}
+
+.deprecatedStatus {
+    @apply flex rounded-lg h-full bg-red-500 p-8 flex-col;
+}
